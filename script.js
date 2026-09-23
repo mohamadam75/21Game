@@ -8,7 +8,8 @@ function shuffle(){deck=fullDeck();for(let i=deck.length-1;i>0;i--){const j=Math
 function draw(){return deck.pop()}
 function value(c){return c==="A"?11:c==="J"?2:c==="Q"?3:c==="K"?4:Number(c)}
 function score(hand){let total=hand.reduce((a,c)=>a+value(c),0),aces=hand.filter(c=>c==="A").length;while(total>21&&aces--)total-=10;return total}
-function cardsText(hand){return hand.map(c=>`[${c}]`).join(" ")}
+function cardVisual(c){const map={"6":"🂦","7":"🂧","8":"🂨","9":"🂩","10":"🂪","J":"🂫","Q":"🂭","K":"🂮","A":"🂡"};return `<span class="playing-card" title="${c}">${map[c]||c}</span>`}
+function cardsText(hand){return hand.map(cardVisual).join("")}
 function renderTables(){$("tables").innerHTML=tables.map((base,i)=>{const ok=wallet>=base*4;return `<article class="table-card"><h3>میز ${i+1}</h3><div class="amount">${money(base)} تومان</div><div class="meta">حداقل موجودی: ${money(base*4)} تومان<br>ظرفیت: ۲ تا ۶ نفر</div><button class="join" ${ok?"":"disabled"} onclick="joinTable(${i})">${ok?"ورود به میز":"موجودی کافی نیست"}</button></article>`}).join("");$("wallet").textContent=money(wallet)}
 function joinTable(i){currentTable=i;bank=tables[i]*3;bankRound=1;players=names.map(name=>({name,hand:[],done:false}));banker=null;activePlayer=0;shuffle();$("modalTitle").textContent=`میز ${i+1}`;$("tableInfo").textContent=`مبلغ پایه: ${money(tables[i])} تومان | بانک اولیه: ${money(bank)} تومان`;$("modal").classList.remove("hidden");startAskechi()}
 function startAskechi(){askechi=true;banker=null;bankerHand=[];playerHand=[];players.forEach(p=>p.hand=[]);shuffle();const start=Math.floor(Math.random()*players.length);activePlayer=start;renderAskechi(start);dealAskechi(start)}
