@@ -1,103 +1,28 @@
-const tables = [
-  20000,30000,40000,50000,50000,
-  60000,70000,80000,90000,100000
-];
-
-let wallet = 1000000;
-let currentTable = null;
-let bank = 0;
-let round = 1;
-let players = [];
-let cards = [];
-
-const deck = ["6","7","8","9","10","J","Q","K","A"];
-
-const $ = id => document.getElementById(id);
-const money = n => n.toLocaleString("fa-IR");
-
-function renderTables(){
-  $("tables").innerHTML = tables.map((base,i)=>{
-    const min = base*4;
-    const allowed = wallet >= min;
-    return `
-      <article class="table-card">
-        <h3>میز ${i+1}</h3>
-        <div class="amount">${money(base)} تومان</div>
-        <div class="meta">
-          حداقل موجودی: ${money(min)} تومان<br>
-          ظرفیت: ۲ تا ۶ نفر
-        </div>
-        <button class="join" ${allowed ? "" : "disabled"} onclick="joinTable(${i})">
-          ${allowed ? "ورود به میز" : "موجودی کافی نیست"}
-        </button>
-      </article>`;
-  }).join("");
-  $("wallet").textContent = money(wallet);
-}
-
-function joinTable(index){
-  currentTable=index;
-  const base=tables[index];
-  bank=base*3;
-  round=1;
-  cards=[];
-  players=[{name:"شما",banker:true}];
-  $("modalTitle").textContent=`میز ${index+1}`;
-  $("tableInfo").textContent=`مبلغ پایه: ${money(base)} تومان | بانکت اولیه: ${money(bank)} تومان`;
-  $("modal").classList.remove("hidden");
-  renderGame();
-  log("میز باز شد. در نسخه نهایی، انتخاب بانکدار با قرعه Ace انجام می‌شود.");
-}
-
-function renderGame(){
-  $("bankAmount").textContent=money(bank);
-  $("playerList").innerHTML=players.map((p,i)=>
-    `<li>${p.name} ${p.banker ? "👑 بانکدار" : ""}</li>`).join("");
-}
-
-function log(msg){
-  $("gameLog").innerHTML = msg + "<br>" + $("gameLog").innerHTML;
-}
-
-function drawCard(){
-  const card=deck[Math.floor(Math.random()*deck.length)];
-  cards.push(card);
-  log(`کارت بعدی: <strong>${card}</strong>`);
-}
-
-$("bankBtn").onclick=()=>{
-  log("بانکت انتخاب شد؛ بازیکن باید کارت بعدی را درخواست کند.");
-};
-$("nextCardBtn").onclick=drawCard;
-
-$("reduceBtn").onclick=()=>{
-  if(!currentTable && currentTable!==0)return;
-  const base=tables[currentTable];
-  const input=prompt(`مبلغ کم و کسر را وارد کنید (حداکثر ${money(bank)} تومان):`);
-  const amount=Number(String(input||"").replaceAll(",",""));
-  if(!amount || amount<0 || amount>bank){
-    log("مبلغ کم و کسر معتبر نیست.");
-    return;
-  }
-  bank-=amount;
-  wallet+=amount;
-  log(`بانکدار ${money(amount)} تومان کم و کسر کرد.`);
-  renderGame(); renderTables();
-};
-
-$("nextRoundBtn").onclick=()=>{
-  round++;
-  if(round>3){
-    log("۳ دور بانکداری تمام شد؛ در نسخه نهایی نفر بعدی بانکدار می‌شود.");
-    round=1;
-  }else{
-    log(`دور ${round} شروع شد.`);
-  }
-};
-
-$("closeModal").onclick=()=>$("modal").classList.add("hidden");
-$("modal").addEventListener("click",e=>{
-  if(e.target===$("modal")) $("modal").classList.add("hidden");
-});
-
-renderTables();
+const tables=[20000,30000,40000,50000,50000,60000,70000,80000,90000,100000];
+let wallet=1000000,currentTable=null,bank=0,banker=0,bankRound=1,players=[],deck=[],activePlayer=1;
+let bankerHand=[],playerHand=[],playerDone=false,bankerTurn=false;
+const names=["شما","بازیکن ۲","بازیکن ۳","بازیکن ۴","بازیکن ۵","بازیکن ۶"];
+const $=id=>document.getElementById(id),money=n=>n.toLocaleString("fa-IR");
+const fullDeck=()=>{const a=[];for(let s=0;s<4;s++)for(const c of ["6","7","8","9","10","J","Q","K","A"])a.push(c);return a};
+function shuffle(){deck=fullDeck();for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]]}}
+function draw(){return deck.pop()}
+function value(c){return c==="A"?11:c==="J"?2:c==="Q"?3:c==="K"?4:Number(c)}
+function score(hand){let total=hand.reduce((a,c)=>a+value(c),0),aces=hand.filter(c=>c==="A").length;while(total>21&&aces--)total-=10;return total}
+function cardsText(hand){return hand.map(c=>`[${c}]`).join(" ")}
+function renderTables(){$("tables").innerHTML=tables.map((base,i)=>{const ok=wallet>=base*4;return `<article class="table-card"><h3>میز ${i+1}</h3><div class="amount">${money(base)} تومان</div><div class="meta">حداقل موجودی: ${money(base*4)} تومان<br>ظرفیت: ۲ تا ۶ نفر</div><button class="join" ${ok?"":"disabled"} onclick="joinTable(${i})">${ok?"ورود به میز":"موجودی کافی نیست"}</button></article>`}).join("");$("wallet").textContent=money(wallet)}
+function joinTable(i){currentTable=i;bank=tables[i]*3;bankRound=1;players=names.slice(0,4).map(name=>({name,hand:[],done:false}));banker=Math.floor(Math.random()*players.length);activePlayer=(banker+1)%players.length;shuffle();$("modalTitle").textContent=`میز ${i+1}`;$("tableInfo").textContent=`مبلغ پایه: ${money(tables[i])} تومان | بانک اولیه: ${money(bank)} تومان | دور بانکداری: ۱ از ۳`;$("modal").classList.remove("hidden");startBankingRound();log(`قرعه‌کشی انجام شد؛ ${players[banker].name} بانکدار شد. بازی از سمت راست بانکدار شروع می‌شود.`)}
+function startBankingRound(){shuffle();players.forEach(p=>{p.hand=[];p.done=false});bankerHand=[];playerHand=[];playerDone=false;bankerTurn=false;activePlayer=(banker+1)%players.length;for(let i=0;i<players.length;i++){const idx=(banker+1+i)%players.length;players[idx].hand.push(draw())}bankerHand=[draw()];render();log("برای این دور دوباره بر زده شد؛ کارت آخر به بانکدار رسید.");beginPlayer()}
+function beginPlayer(){if(activePlayer===banker){nextPlayer();return}playerHand=[...players[activePlayer].hand];playerDone=false;bankerTurn=false;render();log(`${players[activePlayer].name} با بانکدار بازی را شروع کرد. کارت اولش: ${playerHand[0]}`);if(score(playerHand)>=21)finishPlayer()}
+function render(){$("bankAmount").textContent=money(bank);$("status").textContent=bankerTurn?"نوبت بانکدار است":`نوبت ${players[activePlayer].name}`;$("seats").innerHTML=players.map((p,i)=>`<div class="seat s${i} ${i===banker?"banker ":""} ${i===activePlayer&&!bankerTurn?"active":""}"><div class="avatar">${i===banker?"👑":"👤"}</div><div class="name">${p.name}</div><div class="tag">${i===banker?"بانکدار":""}</div><div class="cards">${i===banker?cardsText(bankerHand):i===activePlayer?cardsText(playerHand):"🂠"}</div></div>`).join("");$("handInfo").innerHTML=bankerTurn?`دست بانکدار: <strong>${cardsText(bankerHand)}</strong> — مجموع: <strong>${score(bankerHand)}</strong>`:`دست بازیکن فعال: <strong>${cardsText(playerHand)}</strong> — مجموع: <strong>${score(playerHand)}</strong>`;renderChoices()}
+function renderChoices(){const box=$("cardChoices");box.innerHTML="";if(bankerTurn){const b=document.createElement("button");b.textContent="کارت بعدی بانکدار";b.onclick=bankDraw;box.appendChild(b);return}for(let n=1;n<=4;n++){const b=document.createElement("button");b.textContent=`${n} کارت`;b.onclick=()=>requestCards(n);box.appendChild(b)}}
+function requestCards(n){if(bankerTurn||playerDone)return;for(let i=0;i<n;i++){playerHand.push(draw());if(score(playerHand)>21)break}players[activePlayer].hand=[...playerHand];log(`${players[activePlayer].name} ${n} کارت درخواست کرد: ${cardsText(playerHand)}`);render();if(score(playerHand)>21||score(playerHand)===21)finishPlayer()}
+function stand(){if(bankerTurn||playerDone)return;playerDone=true;players[activePlayer].hand=[...playerHand];log(`${players[activePlayer].name} بستم گفت با ${score(playerHand)}.`);bankerPlay()}
+function finishPlayer(){playerDone=true;players[activePlayer].hand=[...playerHand];if(score(playerHand)>21)log(`${players[activePlayer].name} با ${score(playerHand)} سوخت؛ کارت بانکدار حفظ می‌شود.`);else log(`${players[activePlayer].name} با ${score(playerHand)} دستش تمام شد.`);bankerPlay()}
+function bankerPlay(){bankerTurn=true;render();if(score(playerHand)>21){finishBattle();return}if(score(bankerHand)>=17){finishBattle();return}log("بانکدار برای مقایسه باید کارت بکشد.")}
+function bankDraw(){if(!bankerTurn)return;const c=draw();bankerHand.push(c);log(`بانکدار کارت ${c} گرفت؛ مجموع ${score(bankerHand)}.`);render();if(score(bankerHand)>=17)finishBattle()}
+function finishBattle(){const ps=score(playerHand),bs=score(bankerHand);let result;if(ps>21)result="بازیکن سوخت؛ بانکدار برنده است.";else if(bs>21)result="بانکدار سوخت؛ بازیکن برنده است.";else if(bs>=ps)result=`بانکدار ${bs} و بازیکن ${ps}؛ بانکدار برنده است.`;else result=`بازیکن ${ps} و بانکدار ${bs}؛ بازیکن برنده است.`;log(result);log("این دست تمام شد؛ کارت‌های همین دست از بازی خارج می‌شوند. اگر بازیکن سوخته باشد، کارت جاری بانکدار بدون کارت‌کشیدن جدید برای نفر بعد باقی می‌ماند.");nextPlayer()}
+function nextPlayer(){let next=(activePlayer+1)%players.length;if(next===banker)next=(next+1)%players.length;if(next===banker){endBankRound();return}activePlayer=next;playerHand=[];playerDone=false;bankerTurn=false;render();setTimeout(beginPlayer,250)}
+function endBankRound(){log(`دور ${bankRound} بانکداری تمام شد. بانک فعلی: ${money(bank)} تومان.`);if(bank>=tables[currentTable]*9||bankRound>=3){log("شرایط پایان بانکداری رسید؛ نفر بعدی در نسخه کامل بانکدار می‌شود.");$("cardChoices").innerHTML="";return}$("cardChoices").innerHTML="";$("status").textContent="دور تمام شد؛ برای دور بعد دکمه زیر را بزنید."}
+function newBankRound(){if(bankRound>=3||bank>=tables[currentTable]*9){log("بانکداری این نفر تمام شده است.");return}bankRound++;$("tableInfo").textContent=`مبلغ پایه: ${money(tables[currentTable])} تومان | بانک اولیه: ${money(tables[currentTable]*3)} تومان | دور بانکداری: ${bankRound} از ۳`;startBankingRound()}
+function log(msg){$("gameLog").innerHTML=msg+"<br>"+$("gameLog").innerHTML}
+$("standBtn").onclick=stand;$("nextRoundBtn").onclick=newBankRound;$("closeModal").onclick=()=>$("modal").classList.add("hidden");$("modal").addEventListener("click",e=>{if(e.target===$("modal"))$("modal").classList.add("hidden")});renderTables();
