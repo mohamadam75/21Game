@@ -7,7 +7,7 @@ const fullDeck=()=>{const a=[];for(let s=0;s<4;s++)for(const c of ["6","7","8","
 function shuffle(){deck=fullDeck();for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]]}}
 function draw(){return deck.pop()}
 function value(c){return c==="A"?11:c==="J"?2:c==="Q"?3:c==="K"?4:Number(c)}
-function score(hand){let total=hand.reduce((a,c)=>a+value(c),0),aces=hand.filter(c=>c==="A").length;while(total>21&&aces--)total-=10;return total}
+function score(hand){return hand.reduce((a,c)=>a+value(c),0)}
 function cardVisual(c){const map={"6":"🂦","7":"🂧","8":"🂨","9":"🂩","10":"🂪","J":"🂫","Q":"🂭","K":"🂮","A":"🂡"};return `<span class="playing-card" title="${c}">${map[c]||c}</span>`}
 function cardsText(hand){return hand.map(cardVisual).join("")}
 function renderTables(){$("tables").innerHTML=tables.map((base,i)=>{const ok=wallet>=base*4;return `<article class="table-card"><h3>میز ${i+1}</h3><div class="amount">${money(base)} تومان</div><div class="meta">حداقل موجودی: ${money(base*4)} تومان<br>ظرفیت: ۲ تا ۶ نفر</div><button class="join" ${ok?"":"disabled"} onclick="joinTable(${i})">${ok?"ورود به میز":"موجودی کافی نیست"}</button></article>`}).join("");$("wallet").textContent=money(wallet)}
@@ -22,8 +22,8 @@ function renderChoices(){const box=$("cardChoices");box.innerHTML="";if(bankerTu
 function requestCards(n){if(bankerTurn||playerDone)return;for(let i=0;i<n;i++){playerHand.push(draw());if(score(playerHand)>21)break}players[activePlayer].hand=[...playerHand];render();if(score(playerHand)>21||score(playerHand)===21)finishPlayer()}
 function stand(){if(bankerTurn||playerDone)return;playerDone=true;players[activePlayer].hand=[...playerHand];bankerPlay()}
 function finishPlayer(){if(playerDone)return;playerDone=true;players[activePlayer].hand=[...playerHand];const ps=score(playerHand);if(ps>=21){finishBattle(ps===21?"player21":"playerBust");return}bankerPlay()}
-function bankerPlay(){bankerTurn=true;render();const bs=score(bankerHand),ps=score(playerHand);if(ps>21){finishBattle("playerBust");return}if(bs>21||bs===21){finishBattle();return}if(bs>=17){finishBattle();return}}
-function bankDraw(){if(!bankerTurn)return;bankerHand.push(draw());bankerDrewThisHand=true;render();if(score(bankerHand)>21||score(bankerHand)>=17)finishBattle()}
+function bankerPlay(){bankerTurn=true;render();const bs=score(bankerHand),ps=score(playerHand);if(ps>21){finishBattle("playerBust");return}if(bs>21||bs>=20){finishBattle();return}render()}
+function bankDraw(){if(!bankerTurn)return;bankerHand.push(draw());bankerDrewThisHand=true;render();if(score(bankerHand)>21||score(bankerHand)>=20)finishBattle()}
 function finishBattle(reason="normal"){if(battleSettled)return;battleSettled=true;const base=tables[currentTable];const ps=score(playerHand),bs=score(bankerHand);const playerWins=reason==="player21"||(reason!=="playerBust"&&ps<=21&&ps>bs);if(playerWins){bank=Math.max(0,bank-base);players[activePlayer].balance+=base*2;$("status").textContent=`${players[activePlayer].name} برنده شد • ${money(base)} تومان از بانک گرفت`;}else{bank+=base;$("status").textContent=`بانکدار برنده شد • ${money(base)} تومان به بانک اضافه شد`;}$("bankAmount").textContent=money(bank);players[activePlayer].hand=[];playerHand=[];if(bankerDrewThisHand)bankerHand=[];handBetPlaced=false;if(bank<=0||bank>=base*9){$("cardChoices").innerHTML="";render();return}render();setTimeout(nextPlayer,500)}
 function nextPlayer(){let next=(activePlayer+1)%players.length;if(next===banker)next=(next+1)%players.length;if(next===banker){endBankRound();return}activePlayer=next;playerHand=[];playerDone=false;bankerTurn=false;render();setTimeout(beginPlayer,250)}
 function endBankRound(){if(bank>=tables[currentTable]*9||bankRound>=3){$("cardChoices").innerHTML="";return}$("cardChoices").innerHTML="";$("status").textContent="دور تمام شد"}
