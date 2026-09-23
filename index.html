@@ -1,53 +1,17 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>بازی ۲۱</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>بازی ۲۱</title><link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="topbar">
-    <div>
-      <h1>🎴 بازی ۲۱</h1>
-      <p>نسخه آزمایشی وب</p>
-    </div>
-    <div class="balance">موجودی: <strong id="wallet">1,000,000</strong> تومان</div>
-  </header>
-
-  <main>
-    <section class="hero">
-      <h2>انتخاب میز</h2>
-      <p>برای ورود، حداقل موجودی هر میز باید ۴ برابر مبلغ پایه آن باشد.</p>
-    </section>
-
-    <section id="tables" class="tables"></section>
-  </main>
-
-  <div id="modal" class="modal hidden">
-    <div class="modal-card">
-      <button id="closeModal" class="close">×</button>
-      <h2 id="modalTitle"></h2>
-      <div id="tableInfo"></div>
-      <div class="bank-box">
-        <span>بانکت</span>
-        <strong id="bankAmount">0</strong>
-        <small>تومان</small>
-      </div>
-      <div class="players">
-        <h3>بازیکنان</h3>
-        <ul id="playerList"></ul>
-      </div>
-      <div class="actions">
-        <button id="bankBtn">بانکت</button>
-        <button id="nextCardBtn">کارت بعدی</button>
-        <button id="reduceBtn">کم و کسر</button>
-        <button id="nextRoundBtn">دور بعد</button>
-      </div>
-      <div id="gameLog" class="log"></div>
-    </div>
-  </div>
-
-  <script src="script.js"></script>
-</body>
-</html>
+<header class="topbar"><div><h1>🎴 بازی ۲۱</h1><p>نسخه آزمایشی</p></div><div class="balance">موجودی: <strong id="wallet">1,000,000</strong> تومان</div></header>
+<main><section class="hero"><h2>انتخاب میز</h2><p>میز را انتخاب کنید. حداقل موجودی ورود ۴ برابر مبلغ پایه است.</p></section><section id="tables" class="tables"></section></main>
+<div id="modal" class="modal hidden"><div class="modal-card">
+<button id="closeModal" class="close">×</button><h2 id="modalTitle"></h2><div id="tableInfo" class="table-info"></div>
+<div class="poker-table"><div class="table-inner"><div class="bank-center"><div class="chips">🪙🪙🪙</div><strong id="bankAmount">0</strong><small>تومان</small><div id="status" class="status"></div></div></div><div id="seats" class="seats"></div></div>
+<div class="controls"><div id="handInfo" class="hand-info"></div><div id="cardChoices" class="card-choices"></div><button id="standBtn" class="stand">بستم</button><button id="nextRoundBtn" class="secondary">شروع دور بعد بانکداری</button></div>
+<div id="gameLog" class="log"></div>
+</div></div>
+<script src="script.js"></script>
+</body></html>
